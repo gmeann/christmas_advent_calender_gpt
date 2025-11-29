@@ -1,1 +1,146 @@
-# christmas_advent_calender_gpt
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>크리스마스 어드벤트 캘린더</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .ornament{
+      height: 52px; width: 52px; border-radius: 9999px;
+      display:flex; align-items:center; justify-content:center;
+      font-weight:700; font-size:1.1rem; color:#fff;
+      transition: transform .15s ease, opacity .2s ease;
+      box-shadow:0 4px 12px rgba(0,0,0,0.15);
+    }
+    .ornament:hover{ transform: translateY(-4px) scale(1.05); }
+    .locked{ opacity:.35; cursor:not-allowed; }
+    .modal-bg{
+      position:fixed; inset:0; background:rgba(0,0,0,.4);
+      display:flex; align-items:center; justify-content:center;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-gradient-to-b from-red-100 via-amber-50 to-emerald-100 flex flex-col items-center py-8">
+
+<header class="w-full max-w-4xl flex justify-between items-center mb-6">
+  <div>
+    <h1 class="text-3xl font-extrabold text-emerald-800 drop-shadow">🎄 크리스마스 어드벤트 캘린더</h1>
+    <p class="text-sm text-emerald-900/80 mt-1">12월 1일부터 매일 하나씩 열어보아요!</p>
+    <p id="todayInfo" class="text-xs text-emerald-900/60 mt-1"></p>
+  </div>
+  <button id="adminBtn"
+    class="px-4 py-1.5 rounded-full bg-emerald-200 text-emerald-900 font-semibold shadow">
+    🔐 관리자 모드
+  </button>
+</header>
+
+<!-- 트리 오너먼트 -->
+<main class="w-full max-w-4xl flex flex-col items-center">
+<section class="w-full bg-white/80 rounded-3xl shadow-xl px-6 py-6 border border-emerald-100">
+<div class="flex flex-col items-center">
+
+  <div class="mb-3 text-sm font-semibold text-emerald-900">
+    숫자를 눌러 오늘의 응원 메시지를 확인해보세요!
+  </div>
+
+  <div class="text-3xl mb-4">⭐</div>
+
+  <div class="flex flex-col items-center gap-2">
+    <div class="flex gap-2"><button class="ornament locked" data-day="1">1</button></div>
+    <div class="flex gap-2"><button class="ornament locked" data-day="2">2</button><button class="ornament locked" data-day="3">3</button></div>
+    <div class="flex gap-2">
+      <button class="ornament locked" data-day="4">4</button>
+      <button class="ornament locked" data-day="5">5</button>
+      <button class="ornament locked" data-day="6">6</button>
+    </div>
+    <div class="flex gap-2">
+      <button class="ornament locked" data-day="7">7</button>
+      <button class="ornament locked" data-day="8">8</button>
+      <button class="ornament locked" data-day="9">9</button>
+      <button class="ornament locked" data-day="10">10</button>
+    </div>
+    <div class="flex gap-2">
+      <button class="ornament locked" data-day="11">11</button>
+      <button class="ornament locked" data-day="12">12</button>
+      <button class="ornament locked" data-day="13">13</button>
+      <button class="ornament locked" data-day="14">14</button>
+      <button class="ornament locked" data-day="15">15</button>
+    </div>
+    <div class="flex gap-2">
+      <button class="ornament locked" data-day="16">16</button>
+      <button class="ornament locked" data-day="17">17</button>
+      <button class="ornament locked" data-day="18">18</button>
+      <button class="ornament locked" data-day="19">19</button>
+      <button class="ornament locked" data-day="20">20</button>
+      <button class="ornament locked" data-day="21">21</button>
+    </div>
+    <div class="flex gap-2">
+      <button class="ornament locked" data-day="22">22</button>
+      <button class="ornament locked" data-day="23">23</button>
+      <button class="ornament locked" data-day="24">24</button>
+      <button class="ornament locked" data-day="25">25</button>
+    </div>
+  </div>
+
+</section>
+</main>
+
+<!-- 팝업 모달 -->
+<div id="modal" class="hidden modal-bg">
+  <div class="bg-white max-w-sm w-full rounded-3xl p-6 shadow-xl">
+    <h2 id="modalTitle" class="text-xl font-bold text-emerald-700 mb-2"></h2>
+    <p id="modalMessage" class="text-slate-800 whitespace-pre-line mb-3"></p>
+    <button id="closeModal" class="px-4 py-2 bg-emerald-600 text-white rounded-xl font-semibold shadow">
+      닫기
+    </button>
+  </div>
+</div>
+
+<script>
+let isAdmin = false;
+
+const messages = {
+  1: "오늘 하루를 시작한 너, 이미 멋진 한 걸음을 내딛었어 🌱\n\n🎯 미션: \"오늘 나는 어떤 점이 가장 대견했을까?\" 생각해보고 적어보기",
+  2: "실수는 모자람이 아니라 성장의 증거야 ✨\n\n🎯 미션: 오늘 실수에서 배운 점 한 가지 적어보기",
+  3: "웃는 얼굴은 누군가에게 큰 선물이야 😊\n\n🎯 미션: 3명에게 눈 보며 웃으며 인사하기",
+  25: "✨ 메리 크리스마스 ✨\n\n세상에 하나뿐인 소중한 사람, 바로 너야 💖\n\n🎯 미션: 소원을 한 가지 적고 가슴에 담기 🌟"
+};
+
+document.getElementById("todayInfo").textContent = new Date().toLocaleDateString("ko-KR");
+
+document.querySelectorAll(".ornament").forEach(btn=>{
+  const colors=["#EF4444","#10B981","#F59E0B","#3B82F6","#EC4899","#84CC16"];
+  btn.style.backgroundColor = colors[(btn.dataset.day-1)%6];
+
+  btn.addEventListener("click",()=>{
+    const day = Number(btn.dataset.day);
+    const today = new Date();
+    if(!isAdmin && (today.getMonth()!==11 || day>today.getDate())){
+      alert("아직 열 수 없어요 🎄");
+      return;
+    }
+
+    document.getElementById("modalTitle").textContent = `12월 ${day}일`;
+    document.getElementById("modalMessage").textContent = messages[day] ?? "🎁 준비된 메시지가 곧 들어올 예정이에요";
+    document.getElementById("modal").classList.remove("hidden");
+  });
+});
+
+document.getElementById("closeModal").addEventListener("click",()=>{
+  document.getElementById("modal").classList.add("hidden");
+});
+
+document.getElementById("adminBtn").addEventListener("click",()=>{
+  const pw = prompt("비밀번호:");
+  if(pw==="0000"){
+    isAdmin=true;
+    document.querySelectorAll(".ornament").forEach(o=>o.classList.remove("locked"));
+    alert("관리자 모드 활성화!");
+  }
+});
+</script>
+
+</body>
+</html>
